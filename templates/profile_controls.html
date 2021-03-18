@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% load get_item from template_filters %}
+{% block content %}
+
+    <h1>Selection of controls:</h1>
+    <p style="font-family: 'Times New Roman';font-size: medium">
+        Select the controls you have implemented for each subcategory and explain how you implemented it.
+    </p>
+    <form method="POST" name = "formname" action="{% url 'save_profile_controls' profile %}?subcategory_and_controls={{subcategory_and_controls}}">
+        {% csrf_token %}
+         {% for subcategory in subcategory_and_controls %}
+                <p>
+                    <b>Subcategory Name: </b>{{ subcategory.subcategory.name }}<br>
+                    <b>Subcategory Description:</b>{{ subcategory.subcategory.description }}<br>
+                    <input type='button' onclick="toggle_visibility('{{ subcategory.subcategory.id }}')" value='show or hide'>
+                </p>
+                            <table class= table id="{{ subcategory.subcategory.id }}">
+                            <thead>
+                                <tr>
+                                    <th>Select</th>
+                                    <th>Control</th>
+                                    <th>Implementation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+
+                            {% for control in subcategory.related_controls%}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" id="checbox" name="controls" value={{ control.id}}/>
+                                    </td>
+                                    <td>
+                                        <a href="" style="color: black" data-toggle="modal"
+                                           data-target="#ControlInfo{{ control.pk }}">
+                                            {{ control.name }}
+                                        </a>
+                                        <div class="modal" tabindex="-1" id="ControlInfo{{ control.pk }}">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h1 class="modal-title">{{ control.name }}</h1>
+                                                        <button type="button" class="close" data-dismiss="modal"
+                                                                aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>{{ control.description }}</p>
+
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary"
+                                                                data-dismiss="modal">
+                                                            Close
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                         <input type="text" name="controls_implementation" class="resizedTextbox">
+                                    </td>
+
+                                </tr>
+                            {% endfor %}
+                            </tr>
+                            </tbody>
+                            </table>
+            {% endfor %}
+
+     <button type="submit" class="btn btn-primary btn-sm">Save controls</button>
+    </form>
+
+
+    <script>
+        toggle_visibility = function (id){
+            var e = $("#"+id);
+            e.toggle();
+            }
+    </script>
+
+
+
+{% endblock %}
