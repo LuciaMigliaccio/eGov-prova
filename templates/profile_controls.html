@@ -7,7 +7,7 @@
     <p style="font-family: 'Times New Roman';font-size: medium">
         Select the controls you have implemented for each subcategory and explain how you implemented it.
     </p>
-    <form method="POST" name = "formname" action="{% url 'save_profile_controls' profile %}?subcategory_and_controls={{subcategory_and_controls}}">
+    <form method="POST" name = "formname" action="{% url 'save_profile_controls' profile %}">
         {% csrf_token %}
          {% for subcategory in subcategory_and_controls %}
                 <p>
