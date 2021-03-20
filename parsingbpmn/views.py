@@ -4,7 +4,7 @@ import re, openpyxl
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from openpyxl import Workbook
-from openpyxl.styles import Font, Border, Side
+from openpyxl.styles import Font, Border, Side, Alignment
 
 from .forms import ProcessForm, SystemForm, ContextualizationForm, ProfileForm, FusionForm, SelectContextForm
 from .models import Process, Asset, System, Asset_has_attribute, Attribute, Asset_type, Attribute_value, \
@@ -735,12 +735,13 @@ def create_profile(request,pk):
     context= pk
     values_in_context=(Contextualization.objects.filter(context=context)).values()
     subcategory_dict=[]
-    maturity_levels=[]
     maturity_dict=[]
+    priority_of_subcat=[]
     form= ProfileForm(request.POST)
 
     for value in values_in_context:
         temp=Subcategory.objects.filter(id=value['subcategory_id'])
+        priority_of_subcat.append(value['priority'])
         subcategory_dict.append((list(temp.values()))[0])
         maturity_levels=list((contextualization_has_maturity_levels.objects.filter(subcategory_contextualization_id=value['id']).values()))
         maturitytemp=[]
@@ -752,7 +753,7 @@ def create_profile(request,pk):
 
     priority_list=["Bassa", "Media", "Alta"]
     request.session['list'] = subcategory_dict
-    return render(request, 'create_profile.html', {'form':form, 'subcategory_dict': subcategory_dict, 'priority_list': priority_list, 'maturity_dict':maturity_dict,'context':context })
+    return render(request, 'create_profile.html', {'form':form, 'subcategory_dict': subcategory_dict, 'priority_list': priority_list,'priority_of_subcat': priority_of_subcat , 'maturity_dict':maturity_dict,'context':context })
 
 def save_profile(request,pk):
     subcategory_dict=request.session['list']
@@ -1276,14 +1277,15 @@ def export_context(request, pk):
                                      right=Side(border_style="thin", color='FF000000'),
                                      top=Side(border_style="thin", color='FF000000'),
                                      bottom=Side(border_style="thin", color='FF000000'), )
-        dims = {}
+
         for row in worksheet.rows:
             for cell in row:
-
-                if cell.value:
-                    dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value))))
-        for col, value in dims.items():
-            worksheet.column_dimensions[col].width = value
+                cell.alignment = Alignment(wrapText=True)
+                value= cell.column_letter
+                if(value != 'A' and value != 'D'):
+                    worksheet.column_dimensions[value].width = 50
+                else:
+                    worksheet.column_dimensions[value].width = 20
 
         workbook.save(response)
 
@@ -1338,7 +1340,10 @@ def export_profile(request, pk):
                     implementation.append(control['implementation'])
 
             controlsjoined = ";".join(controlli)
-            controlimplementation = ";".join(implementation)
+            if("target" in Profile.objects.get(pk=pk).name):
+                controlimplementation="none"
+            else:
+                controlimplementation = ";".join(implementation)
             row_list.append({'Function': category.function, 'Category': category, 'subcategory': subcategory, 'priority_level': priority_level, 'maturity_level': maturity_level, 'controls':controlsjoined, 'implementation': controlimplementation })
 
 
@@ -1366,14 +1371,14 @@ def export_profile(request, pk):
                                      right=Side(border_style="thin", color='FF000000'),
                                      top=Side(border_style="thin", color='FF000000'),
                                      bottom=Side(border_style="thin", color='FF000000'), )
-        dims = {}
         for row in worksheet.rows:
             for cell in row:
-
-                if cell.value:
-                    dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value))))
-        for col, value in dims.items():
-            worksheet.column_dimensions[col].width = value
+                cell.alignment = Alignment(wrapText=True)
+                value = cell.column_letter
+                if (value != 'A' and value != 'D'):
+                    worksheet.column_dimensions[value].width = 50
+                else:
+                    worksheet.column_dimensions[value].width = 20
 
         workbook.save(response)
 
@@ -1439,14 +1444,13 @@ def export_roadmap(request, pk):
                                          right=Side(border_style="thin", color='FF000000'),
                                          top=Side(border_style="thin", color='FF000000'),
                                          bottom=Side(border_style="thin", color='FF000000'), )
-            dims = {}
-            for row in worksheet.rows:
-                for cell in row:
-                    if cell.value:
-                        dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value))))
-            for col, value in dims.items():
-                worksheet.column_dimensions[col].width = value
+
+        for row in worksheet.rows:
+            for cell in row:
+                cell.alignment = Alignment(wrapText=True)
+                value = cell.column_letter
+                worksheet.column_dimensions[value].width = 50
+
 
         workbook.save(response)
     return response
-

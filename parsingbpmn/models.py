@@ -4,6 +4,9 @@ from django.utils.translation import gettext_lazy as _
 from enum import Enum
 
 # Create your models here.
+# To execute the database dump, in the terminal digit:
+# mysqldump -u root -p egov_db > egov_db.sql
+
 
 class System(models.Model):
     name = models.CharField(max_length=100)
