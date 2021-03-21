@@ -1415,6 +1415,7 @@ def export_roadmap(request, pk):
 
         row_list = []
 
+        print(missingcontrols)
         for element in missingcontrols:
             subcategory = (Subcategory.objects.get(id=element['subcategory_id']))
             controlli=[]
@@ -1426,24 +1427,24 @@ def export_roadmap(request, pk):
 
             row_list.append({'subcategory': subcategory, 'controls': controlsjoined})
 
-            for row in row_list:
-                row_num += 1
+        for row in row_list:
+            row_num += 1
 
-                # define data for each cell in the row
-                row = [
-                    row['subcategory'].name + ": " + row['subcategory'].description,
-                    row['controls']
-                ]
+            # define data for each cell in the row
+            row = [
+                row['subcategory'].name + ": " + row['subcategory'].description,
+                row['controls']
+            ]
 
-                # assign data for each cell of the row
-                for col_num, cell_value in enumerate(row, 1):
-                    cell = worksheet.cell(row=row_num, column=col_num)
-                    cell.value = cell_value
-                    cell.font = Font(name="Times New Roman", size=11, bold=False, color='FF000000')
-                    cell.border = Border(left=Side(border_style="thin", color='FF000000'),
-                                         right=Side(border_style="thin", color='FF000000'),
-                                         top=Side(border_style="thin", color='FF000000'),
-                                         bottom=Side(border_style="thin", color='FF000000'), )
+            # assign data for each cell of the row
+            for col_num, cell_value in enumerate(row, 1):
+                cell = worksheet.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+                cell.font = Font(name="Times New Roman", size=11, bold=False, color='FF000000')
+                cell.border = Border(left=Side(border_style="thin", color='FF000000'),
+                                     right=Side(border_style="thin", color='FF000000'),
+                                     top=Side(border_style="thin", color='FF000000'),
+                                     bottom=Side(border_style="thin", color='FF000000'), )
 
         for row in worksheet.rows:
             for cell in row:
