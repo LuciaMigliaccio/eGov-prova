@@ -818,6 +818,7 @@ def save_profile_controls(request,pk):
     controls_list=[]
     if request.method == 'POST':
         controls_notclean = request.POST.getlist('controls')
+        print(controls_notclean)
         implementation = request.POST.getlist('controls_implementation')
         clean_text=[]
         controls_and_implementation=[]
@@ -829,13 +830,19 @@ def save_profile_controls(request,pk):
             if(len(text)>1):
                 clean_text.append(text)
 
+        print(controls_list)
+
         for i,control in enumerate(controls_list,start=0):
             controls_and_implementation.append({'control': control, 'implementation':clean_text[i]})
 
+        print(controls_and_implementation)
+
         for subcategory in subcategory_and_controls:
             for element in subcategory['related_controls']:
+                count = 0
                 for control in controls_and_implementation:
-                    if control['control'] == element['id']:
+                    if (control['control'] == element['id']) and (count == 0):
+                        count=count+1
                         profilecontro=profile_maturity_control(profile_id=pk, control_id=control['control'], subcategory_id=subcategory['subcategory']['id'], implementation=control['implementation'])
                         profilecontro.save()
 
