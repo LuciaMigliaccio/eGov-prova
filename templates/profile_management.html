@@ -36,6 +36,7 @@
                 <th>Evaluate</th>
                 <th>Controls</th>
                 <th>Missing controls</th>
+                <th>Add controls</th>
                 <th>Export</th>
                 <th>Delete profile</th>
             </tr>
@@ -74,7 +75,17 @@
                         {% if "target" in profile.name %}
                             none
                         {% endif %}
-
+                    </td>
+                    <td>
+                        {% if "target" in profile.name %}
+                            none
+                        {% endif %}
+                         {% if "target" not in profile.name %}
+                        <form method="POST" action="{% url 'save_profile_controls' profile.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+                        </form>
+                        {% endif %}
                     </td>
                     <td>
                         <form method="POST" action="{% url 'export_profile' profile.pk %}">

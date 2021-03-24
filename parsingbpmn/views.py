@@ -810,8 +810,9 @@ def profile_controls(request,pk):
 
         subcategory_and_controls.append({'subcategory': subcategory, 'related_controls': temp})
 
+    context = (Profile.objects.get(pk=profile)).context_id
     request.session['subcategory_and_controls'] = subcategory_and_controls
-    return render(request, 'profile_controls.html', {'subcategory_and_controls': subcategory_and_controls, 'ids_controls':ids_controls, 'profile': profile})
+    return render(request, 'profile_controls.html', {'subcategory_and_controls': subcategory_and_controls, 'ids_controls':ids_controls, 'profile': profile, 'context': context})
 
 def save_profile_controls(request,pk):
     subcategory_and_controls = request.session.get('subcategory_and_controls')
@@ -848,10 +849,8 @@ def save_profile_controls(request,pk):
 
     profile = Profile.objects.get(pk=pk)
     context= profile.context_id
-    profiles = Profile.objects.filter(context=context)
-    fusionform=FusionForm(request.POST)
-    profileform=ProfileForm(request.POST)
-    return render(request, 'profile_management.html', {'context': context, 'profiles': profiles,'profileform':profileform, 'fusionform': fusionform})
+
+    return render(request, 'profile_controls.html', {'subcategory_and_controls': subcategory_and_controls, 'profile': profile.pk, 'context': context})
 
 def fusion_perform(request):
     if request.method == 'POST':
@@ -1008,6 +1007,8 @@ def fusion_profile_perform(request):
             controls_ufficiale = createdict(profiloufficiale, dict_ufficiale)
             controls_target = createdict(profilotarget, dict_target)
 
+            print(controls_ufficiale)
+
             missingcontrols = []
             temp= []
             temp = profileupgrade(controls_attuale, controls_ufficiale)
@@ -1077,7 +1078,6 @@ def profile_evaluation(request,pk):
         std_profile = []
         avz_profile = []
         missing_controls=[]
-        actual_profile=[]
         newdict={}
 
         for profile in profiles:
@@ -1144,9 +1144,24 @@ def profile_missing(request,pk):
         profile=Profile.objects.get(pk=pk)
         context=profile.context_id
         missing_controls = request.session.get('missing_controls')
-        missingcontrols = missing_controls
-        if(str(profile.level)== "None"):
+        if (str(profile.level) == "None"):
             missingcontrols = []
+        else:
+            level=profile.level
+            if level == "insufficiente":
+                nextlevel="minimo"
+            elif level=="minimo":
+                nextlevel="standard"
+            elif level=="standard":
+                nextlevel="avanzato"
+
+            nextprofile= Profile.objects.get(context_id=context, level=nextlevel)
+            nextprofilelevel=(profile_maturity_control.objects.filter(profile_id=nextprofile.pk)).values()
+
+            dict_target = {}
+            controls_target = createdict(nextprofilelevel, dict_target)
+            missingcontrols = profileupgrade(missing_controls, controls_target)
+
         request.session['list'] = missingcontrols
         implementation= "none"
         request.session['implementation'] = implementation
@@ -1401,7 +1416,7 @@ def export_roadmap(request, pk):
         )
         response['Content-Disposition'] = 'attachment; filename={date}-{name}-roadmap.xlsx'.format(
             date=datetime.now().strftime('%d-%m-%Y'),
-            name=Profile.objects.get(pk=pk).name.replace(" ", "_")
+            name="roadmap_export"
         )
         workbook = Workbook()
 

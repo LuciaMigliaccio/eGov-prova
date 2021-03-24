@@ -9,13 +9,15 @@
     </p>
     <form method="POST" name = "formname" action="{% url 'save_profile_controls' profile %}">
         {% csrf_token %}
+        <div style="height:520px;width:1120px;border:1px solid #ccc;overflow:auto;">
+
          {% for subcategory in subcategory_and_controls %}
                 <p>
                     <b>Subcategory Name: </b>{{ subcategory.subcategory.name }}<br>
                     <b>Subcategory Description:</b>{{ subcategory.subcategory.description }}<br>
                     <input type='button' onclick="toggle_visibility('{{ subcategory.subcategory.id }}')" value='show or hide'>
                 </p>
-                            <table class= table id="{{ subcategory.subcategory.id }}">
+                            <table class= table id="{{ subcategory.subcategory.id }}" style="display:none">
                             <thead>
                                 <tr>
                                     <th>Select</th>
@@ -70,9 +72,14 @@
                             </tbody>
                             </table>
             {% endfor %}
-
+            </div>
      <button type="submit" class="btn btn-primary btn-sm">Save controls</button>
+    <a href="{% url 'profile_management' context %}">
+        <input type="button" class="btn btn-primary btn-sm" value="Done" />
+    </a>
     </form>
+
+
 
 
     <script>
