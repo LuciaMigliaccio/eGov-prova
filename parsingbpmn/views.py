@@ -718,139 +718,6 @@ def save_contextualization(request):
     context = Context.objects.all()
     return render(request, 'context_management.html', {'contexts': context, 'form': fusionform})
 
-def profile_management(request,pk):
-    if request.method == 'POST':
-        fusionform=FusionForm(request.POST)
-        profileform=ProfileForm(request.POST)
-    else:
-        fusionform=FusionForm(request.POST)
-        profileform = ProfileForm(request.POST)
-    profiles = Profile.objects.filter(context=Context.objects.get(pk=pk))
-    context=pk
-    return render(request,'profile_management.html',{
-        'profiles':profiles, 'fusionform': fusionform, 'context': context, 'profileform': profileform,
-    })
-
-def create_profile(request,pk):
-    context= pk
-    values_in_context=(Contextualization.objects.filter(context=context)).values()
-    subcategory_dict=[]
-    maturity_dict=[]
-    priority_of_subcat=[]
-    form= ProfileForm(request.POST)
-
-    for value in values_in_context:
-        temp=Subcategory.objects.filter(id=value['subcategory_id'])
-        priority_of_subcat.append(value['priority'])
-        subcategory_dict.append((list(temp.values()))[0])
-        maturity_levels=list((contextualization_has_maturity_levels.objects.filter(subcategory_contextualization_id=value['id']).values()))
-        maturitytemp=[]
-        for item in maturity_levels:
-            indexmat=item['maturity_level_id']
-            temp=list((Maturity_level.objects.filter(id=indexmat)).values())
-            maturitytemp.append(temp[0])
-        maturity_dict.append(maturitytemp)
-
-    priority_list=["Bassa", "Media", "Alta"]
-    request.session['list'] = subcategory_dict
-    return render(request, 'create_profile.html', {'form':form, 'subcategory_dict': subcategory_dict, 'priority_list': priority_list,'priority_of_subcat': priority_of_subcat , 'maturity_dict':maturity_dict,'context':context })
-
-def save_profile(request,pk):
-    subcategory_dict=request.session['list']
-    if request.method == 'POST':
-        form=ProfileForm(request.POST)
-        if form.is_valid():
-            saved_form = form.save(commit=False)
-            saved_form.context_id = pk
-            saved_form.save()
-            last_profile= Profile.objects.latest('id')
-
-        priority= request.POST.getlist('priority')
-        matlev=request.POST.getlist('maturity_level')
-        matid=[]
-        for string in matlev:
-            splitted=string.split(",")
-            matid.append(splitted[0])
-
-        sub_list=[]
-        for dict in subcategory_dict:
-            sub_id= dict['id']
-            sub_list.append(sub_id)
-
-        for i,subcategory in enumerate(sub_list,start=0):
-            newprofilehassubcategory= profile_has_subcategory(profile_id=last_profile.pk, subcategory_id=subcategory, priority=priority[i], maturity_level_id=matid[i])
-            newprofilehassubcategory.save()
-
-    request.session['list']=subcategory_dict
-    return redirect('profile_controls', last_profile.pk)
-
-def profile_controls(request,pk):
-    subcategory_dict=request.session['list']
-    profile = pk
-    chosen_framework= (Profile.objects.filter(id=pk)).values('framework_id')
-    controls_list = list((Control.objects.all()).values())
-    ids_controls=[]
-    subcategory_and_controls=[]
-
-    for control in controls_list:
-        relatedframework = (Family.objects.filter(id=control['family_id'])).values('framework_id_id')
-        if chosen_framework[0]['framework_id'] == relatedframework[0]['framework_id_id']:
-            ids_controls.append(control)
-
-    for subcategory in subcategory_dict:
-        temp=[]
-
-        implemented = list((Subcategory_is_implemented_through_control.objects.filter(subcategory_id=subcategory['id'])).values())
-        for control in ids_controls:
-            i = 0
-            while(i<len(implemented)):
-                if control['id'] == implemented[i]['control_id']:
-                    temp.append(control)
-                i=i+1
-
-        subcategory_and_controls.append({'subcategory': subcategory, 'related_controls': temp})
-
-    context = (Profile.objects.get(pk=profile)).context_id
-    request.session['subcategory_and_controls'] = subcategory_and_controls
-    return render(request, 'profile_controls.html', {'subcategory_and_controls': subcategory_and_controls, 'ids_controls':ids_controls, 'profile': profile, 'context': context})
-
-def save_profile_controls(request,pk):
-    subcategory_and_controls = request.session.get('subcategory_and_controls')
-    controls_list=[]
-    if request.method == 'POST':
-        controls_notclean = request.POST.getlist('controls')
-        print(controls_notclean)
-        implementation = request.POST.getlist('controls_implementation')
-        clean_text=[]
-        controls_and_implementation=[]
-
-        for id in controls_notclean:
-            controls_list.append(int(re.search(r'\d+', id).group()))
-
-        for text in implementation:
-            if(len(text)>1):
-                clean_text.append(text)
-
-        print(controls_list)
-
-        for i,control in enumerate(controls_list,start=0):
-            controls_and_implementation.append({'control': control, 'implementation':clean_text[i]})
-
-        print(controls_and_implementation)
-
-        for subcategory in subcategory_and_controls:
-            for element in subcategory['related_controls']:
-                count = 0
-                for control in controls_and_implementation:
-                    if (control['control'] == element['id']) and (count == 0):
-                        count=count+1
-                        profilecontro=profile_maturity_control(profile_id=pk, control_id=control['control'], subcategory_id=subcategory['subcategory']['id'], implementation=control['implementation'])
-                        profilecontro.save()
-
-    profile = Profile.objects.get(pk=pk)
-    context= profile.context_id
-
-    return render(request, 'profile_controls.html', {'subcategory_and_controls': subcategory_and_controls, 'profile': profile.pk, 'context': context})
 
 def fusion_perform(request):
     if request.method == 'POST':
@@ -939,6 +806,21 @@ def fusion_perform(request):
     context = Context.objects.all()
     return render(request, 'context_management.html', {'context': context, 'selectcontextform ': selectcontextform , 'form': form })
 
+
+def profile_management(request,pk):
+    if request.method == 'POST':
+        fusionform=FusionForm(request.POST)
+        profileform=ProfileForm(request.POST)
+    else:
+        fusionform=FusionForm(request.POST)
+        profileform = ProfileForm(request.POST)
+    profiles = Profile.objects.filter(context=Context.objects.get(pk=pk))
+    context=pk
+    return render(request,'profile_management.html',{
+        'profiles':profiles, 'fusionform': fusionform, 'context': context, 'profileform': profileform,
+    })
+
+
 def generate_profile(request, pk):
     if request.method == 'POST':
         profileform= ProfileForm(request.POST)
@@ -984,47 +866,137 @@ def generate_profile(request, pk):
     context = last_profile.context_id
     return render(request, 'profile_management.html', {'context':context ,'profiles': profiles, 'profileform':profileform, 'fusionform': fusionform})
 
-def fusion_profile_perform(request):
+
+def create_profile(request,pk):
+    context= pk
+    values_in_context=(Contextualization.objects.filter(context=context)).values()
+    subcategory_dict=[]
+    maturity_dict=[]
+    priority_of_subcat=[]
+    form= ProfileForm(request.POST)
+
+    for value in values_in_context:
+        temp=Subcategory.objects.filter(id=value['subcategory_id'])
+        priority_of_subcat.append(value['priority'])
+        subcategory_dict.append((list(temp.values()))[0])
+        maturity_levels=list((contextualization_has_maturity_levels.objects.filter(subcategory_contextualization_id=value['id']).values()))
+        maturitytemp=[]
+        for item in maturity_levels:
+            indexmat=item['maturity_level_id']
+            temp=list((Maturity_level.objects.filter(id=indexmat)).values())
+            maturitytemp.append(temp[0])
+        maturity_dict.append(maturitytemp)
+
+    priority_list=["Bassa", "Media", "Alta"]
+    request.session['list'] = subcategory_dict
+    return render(request, 'create_profile.html', {'form':form, 'subcategory_dict': subcategory_dict, 'priority_list': priority_list,'priority_of_subcat': priority_of_subcat , 'maturity_dict':maturity_dict,'context':context })
+
+def save_profile(request,pk):
+    subcategory_dict=request.session['list']
     if request.method == 'POST':
-        fusionform = FusionForm(request.POST)
-        if fusionform.is_valid():
-            actualprofile = fusionform['actual_profile'].value()
-            officialprofile = fusionform['official_profile'].value()
-            targetprofile= fusionform['target_profile'].value()
+        form=ProfileForm(request.POST)
+        if form.is_valid():
+            saved_form = form.save(commit=False)
+            saved_form.context_id = pk
+            saved_form.save()
+            last_profile= Profile.objects.latest('id')
 
-            profile1= profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=actualprofile))
-            profile2 = profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=officialprofile))
-            profile3 = profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=targetprofile))
-            profiloattuale=profile1.values()
-            profiloufficiale = profile2.values()
-            profilotarget = profile3.values()
+        priority= request.POST.getlist('priority')
+        matlev=request.POST.getlist('maturity_level')
+        matid=[]
+        for string in matlev:
+            splitted=string.split(",")
+            matid.append(splitted[0])
 
-            dict_attuale = {}
-            dict_ufficiale= {}
-            dict_target = {}
+        sub_list=[]
+        for dict in subcategory_dict:
+            sub_id= dict['id']
+            sub_list.append(sub_id)
 
-            controls_attuale= createdict(profiloattuale, dict_attuale)
-            controls_ufficiale = createdict(profiloufficiale, dict_ufficiale)
-            controls_target = createdict(profilotarget, dict_target)
+        for i,subcategory in enumerate(sub_list,start=0):
+            newprofilehassubcategory= profile_has_subcategory(profile_id=last_profile.pk, subcategory_id=subcategory, priority=priority[i], maturity_level_id=matid[i])
+            newprofilehassubcategory.save()
 
-            print(controls_ufficiale)
+    request.session['list']=subcategory_dict
+    return redirect('profile_controls', last_profile.pk)
 
-            missingcontrols = []
-            temp= []
-            temp = profileupgrade(controls_attuale, controls_ufficiale)
-            missingcontrols= profileupgrade(temp, controls_target)
-            request.session['list']=missingcontrols
-            request.session['implementation']="none"
-            return redirect('controls_missing')
+def profile_controls(request,pk):
+    subcategory_dict=request.session['list']
+    profile = pk
+    chosen_framework= (Profile.objects.filter(id=pk)).values('framework_id')
+    controls_list = list((Control.objects.all()).values())
+    ids_controls=[]
+    subcategory_and_controls=[]
+
+    for control in controls_list:
+        relatedframework = (Family.objects.filter(id=control['family_id'])).values('framework_id_id')
+        if chosen_framework[0]['framework_id'] == relatedframework[0]['framework_id_id']:
+            ids_controls.append(control)
+
+    for subcategory in subcategory_dict:
+        temp=[]
+
+        implemented = list((Subcategory_is_implemented_through_control.objects.filter(subcategory_id=subcategory['id'])).values())
+        for control in ids_controls:
+            i = 0
+            while(i<len(implemented)):
+                if control['id'] == implemented[i]['control_id']:
+                    temp.append(control)
+                i=i+1
+
+        subcategory_and_controls.append({'subcategory': subcategory, 'related_controls': temp})
+
+    context = (Profile.objects.get(pk=profile)).context_id
+    request.session['subcategory_and_controls'] = subcategory_and_controls
+    return render(request, 'profile_controls.html', {'subcategory_and_controls': subcategory_and_controls, 'ids_controls':ids_controls, 'profile': profile, 'context': context})
+
+def save_profile_controls(request,pk):
+    subcategory_and_controls = request.session.get('subcategory_and_controls')
+    sub_controls_list=[]
+    if request.method == 'POST':
+        controls_notclean = request.POST.getlist('controls')
+        print(controls_notclean)
+        implementation = request.POST.getlist('controls_implementation')
+        clean_text=[]
+        controls_and_implementation=[]
+
+        for text in implementation:
+            if (len(text) > 1):
+                clean_text.append(text)
+
+        for i,id in enumerate(controls_notclean,start=0):
+            sub_and_control=id.split("\\")
+            controls_and_implementation.append({'subcategory_id': sub_and_control[0], 'control': sub_and_control[1], 'implementation': clean_text[i]})
+
+        print(controls_and_implementation)
+
+        for line in controls_and_implementation:
+            profilecontro=profile_maturity_control(profile_id=pk, control_id=line['control'], subcategory_id=line['subcategory_id'], implementation=line['implementation'])
+            profilecontro.save()
+
+    profile = Profile.objects.get(pk=pk)
+    context= profile.context_id
+
+    return render(request, 'profile_controls.html', {'subcategory_and_controls': subcategory_and_controls, 'profile': profile.pk, 'context': context})
+
+def profile_roadmap(request, pk):
+    if request.method == 'POST':
+        profile = profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=pk))
+        profilotarget = profile.values()
+        dict_target = {}
+        controls_target = createdict(profilotarget, dict_target)
+        implementedcontrols = controls_target
+        implementation = "other"
+        request.session['pk'] = pk
+        request.session['implemented_list'] = implementedcontrols
+        request.session['implementation'] = implementation
+        return redirect('implemented_controls')
     else:
-        fusionform = FusionForm(request.POST)
-    profile= Profile.objects.all()
-    return render(request,'profile_management.html',{
-        'fusionform':fusionform,'profiles':profile
-    })
+        return redirect('profile_management')
 
-def controls_missing(request):
-    missingcontrols =request.session['list']
+def implemented_controls(request):
+    implementedcontrols =request.session['implemented_list']
+
     profilepk = request.session.get('pk')
     implementation=request.session.get('implementation')
     subcategory_clear_list = []
@@ -1036,7 +1008,7 @@ def controls_missing(request):
     else:
         implementation_list = (profile_maturity_control.objects.filter(profile_id=profilepk)).values()
 
-    for control in missingcontrols:
+    for control in implementedcontrols:
         element = control['subcategory_id']
         subcategory_clear_list.append((Subcategory.objects.get(pk=element)))
         framework_list=[]
@@ -1048,24 +1020,7 @@ def controls_missing(request):
         controls_clear_list.append(control['control_id'])
         framework_clear_list.append(framework_list)
 
-    if request.method=='POST':
-        request.session['list']= missingcontrols
-    return render(request, 'controls_missing.html', {'profilepk': profilepk, 'implementation_list': implementation_list,'framework_clear_list': framework_clear_list, 'missingcontrols': missingcontrols, 'subcategory_clear_list': subcategory_clear_list, 'controls_clear_list': controls_clear_list})
-
-def profile_roadmap(request, pk):
-    if request.method == 'POST':
-        profile = profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=pk))
-        profilotarget = profile.values()
-        dict_target = {}
-        controls_target = createdict(profilotarget, dict_target)
-        missingcontrols = controls_target
-        implementation = "other"
-        request.session['pk'] = pk
-        request.session['list'] = missingcontrols
-        request.session['implementation'] = implementation
-        return redirect('controls_missing')
-    else:
-        return redirect('profile_management')
+    return render(request, 'controls_implemented.html', {'profilepk': profilepk, 'implementation_list': implementation_list,'framework_clear_list': framework_clear_list, 'subcategory_clear_list': subcategory_clear_list, 'controls_clear_list': controls_clear_list})
 
 def profile_evaluation(request,pk):
     if request.method == 'POST':
@@ -1136,16 +1091,18 @@ def profile_evaluation(request,pk):
 
         current_profile.save()
 
-    request.session['missing_controls'] = missing_controls
+    request.session['missing_list'] = missing_controls
     return redirect('profile_management', context)
 
 def profile_missing(request,pk):
     if request.method=='POST':
         profile=Profile.objects.get(pk=pk)
         context=profile.context_id
-        missing_controls = request.session.get('missing_controls')
+        missing_controls = request.session['missing_list']
+        print("profilemissing")
+        print(missing_controls)
         if (str(profile.level) == "None"):
-            missingcontrols = []
+            missing_controls = []
         else:
             level=profile.level
             if level == "insufficiente":
@@ -1158,16 +1115,89 @@ def profile_missing(request,pk):
             nextprofile= Profile.objects.get(context_id=context, level=nextlevel)
             nextprofilelevel=(profile_maturity_control.objects.filter(profile_id=nextprofile.pk)).values()
 
-            dict_target = {}
-            controls_target = createdict(nextprofilelevel, dict_target)
-            missingcontrols = profileupgrade(missing_controls, controls_target)
+            actualprofilelevel=(profile_maturity_control.objects.filter(profile_id=profile.pk)).values()
 
-        request.session['list'] = missingcontrols
+            dict_actual={}
+            dict_target = {}
+            controls_actual=createdict(actualprofilelevel,dict_actual)
+            controls_target = createdict(nextprofilelevel, dict_target)
+            missing_controls = profileupgrade(controls_actual, controls_target)
+
+        request.session['missing_list'] = missing_controls
         implementation= "none"
         request.session['implementation'] = implementation
         return redirect('controls_missing')
     else:
         return redirect('profile_management')
+
+def controls_missing(request):
+    missing_controls =request.session['missing_list']
+    profilepk = request.session.get('pk')
+    implementation=request.session.get('implementation')
+    subcategory_clear_list = []
+    controls_clear_list= []
+    framework_clear_list=[]
+
+    if implementation=="none":
+        implementation_list = implementation
+    else:
+        implementation_list = (profile_maturity_control.objects.filter(profile_id=profilepk)).values()
+
+    for control in missing_controls:
+        element = control['subcategory_id']
+        subcategory_clear_list.append((Subcategory.objects.get(pk=element)))
+        framework_list=[]
+        for i,element2 in enumerate(control['control_id'],start=0):
+            control['control_id'][i] = Control.objects.get(pk=element2)
+            family_id=(control['control_id'][i]).family_id
+            frameworkid = (Family.objects.get(pk=family_id)).framework_id
+            framework_list.append(frameworkid)
+        controls_clear_list.append(control['control_id'])
+        framework_clear_list.append(framework_list)
+
+    if request.method=='POST':
+        request.session['missing_list']= missing_controls
+    return render(request, 'controls_missing.html', {'profilepk': profilepk, 'implementation_list': implementation_list,'framework_clear_list': framework_clear_list, 'subcategory_clear_list': subcategory_clear_list, 'controls_clear_list': controls_clear_list})
+
+
+def fusion_profile_perform(request):
+    if request.method == 'POST':
+        fusionform = FusionForm(request.POST)
+        if fusionform.is_valid():
+            actualprofile = fusionform['actual_profile'].value()
+            officialprofile = fusionform['official_profile'].value()
+            targetprofile= fusionform['target_profile'].value()
+
+            profile1= profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=actualprofile))
+            profile2 = profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=officialprofile))
+            profile3 = profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=targetprofile))
+            profiloattuale=profile1.values()
+            profiloufficiale = profile2.values()
+            profilotarget = profile3.values()
+
+            dict_attuale = {}
+            dict_ufficiale= {}
+            dict_target = {}
+
+            controls_attuale= createdict(profiloattuale, dict_attuale)
+            controls_ufficiale = createdict(profiloufficiale, dict_ufficiale)
+            controls_target = createdict(profilotarget, dict_target)
+
+            missingcontrols = []
+            temp= []
+            temp = profileupgrade(controls_attuale, controls_ufficiale)
+            missingcontrols= profileupgrade(temp, controls_target)
+            request.session['missing_list']=missingcontrols
+            print(missingcontrols)
+            request.session['implementation']="none"
+            return redirect('controls_missing')
+    else:
+        fusionform = FusionForm(request.POST)
+    profile= Profile.objects.all()
+    return render(request,'profile_management.html',{
+        'fusionform':fusionform,'profiles':profile
+    })
+
 
 def delete_context(request,pk):
     if request.method == 'POST':

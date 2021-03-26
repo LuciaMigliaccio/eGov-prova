@@ -24,7 +24,7 @@ from parsingbpmn.views import bpmn_process_management, system_management, \
     profile_management, fusion_perform, fusion_profile_perform, controls_missing, profile_roadmap, delete_profile, \
     delete_context, create_context, save_contextualization, create_profile, save_profile, profile_controls, save_profile_controls, \
     down_context_sample, read_context_file, generate_profile,profile_evaluation, profile_missing, export_context, export_profile, \
-    export_roadmap
+    export_roadmap, implemented_controls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -63,6 +63,7 @@ urlpatterns = [
     path('export_context/<int:pk>', export_context, name='export_context'),
     path('export_profile/<int:pk>', export_profile, name='export_profile'),
     path('export_roadmap/<int:pk>', export_roadmap, name='export_roadmap'),
+    path('implemented_controls', implemented_controls, name='implemented_controls'),
 ]
 
 if settings.DEBUG:

@@ -31,7 +31,7 @@
                             {% for control in subcategory.related_controls%}
                                 <tr>
                                     <td>
-                                        <input type="checkbox" id="checbox" name="controls" value={{ control.id}}/>
+                                        <input type="checkbox" id="checbox" name="controls" value="{{ subcategory.subcategory.id}}\{{control.id}}"/>
                                     </td>
                                     <td>
                                         <a href="" style="color: black" data-toggle="modal"
@@ -49,7 +49,8 @@
                                                         </button>
                                                     </div>
                                                     <div class="modal-body">
-                                                        <p>{{ control.description }}</p>
+                                                        <p>Description: {{ control.description }}</p>
+                                                        <p>Maturity Level: {{ control.maturity_level }}</p>
 
                                                     </div>
                                                     <div class="modal-footer">
