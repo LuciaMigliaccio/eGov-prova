@@ -741,7 +741,6 @@ def fusion_perform(request):
             while(i< len(context1) and j< len(context2)):
                 if context1[i]['subcategory_id'] == context2[j]['subcategory_id']:
 
-                    newelement = []
                     newelement = context1[i]
 
                     if(context1[i]['priority'] > context2[j]['priority']):
@@ -819,7 +818,6 @@ def profile_management(request,pk):
     return render(request,'profile_management.html',{
         'profiles':profiles, 'fusionform': fusionform, 'context': context, 'profileform': profileform,
     })
-
 
 def generate_profile(request, pk):
     if request.method == 'POST':
@@ -952,10 +950,9 @@ def profile_controls(request,pk):
 
 def save_profile_controls(request,pk):
     subcategory_and_controls = request.session.get('subcategory_and_controls')
-    sub_controls_list=[]
+
     if request.method == 'POST':
         controls_notclean = request.POST.getlist('controls')
-        print(controls_notclean)
         implementation = request.POST.getlist('controls_implementation')
         clean_text=[]
         controls_and_implementation=[]
@@ -968,15 +965,12 @@ def save_profile_controls(request,pk):
             sub_and_control=id.split("\\")
             controls_and_implementation.append({'subcategory_id': sub_and_control[0], 'control': sub_and_control[1], 'implementation': clean_text[i]})
 
-        print(controls_and_implementation)
-
         for line in controls_and_implementation:
             profilecontro=profile_maturity_control(profile_id=pk, control_id=line['control'], subcategory_id=line['subcategory_id'], implementation=line['implementation'])
             profilecontro.save()
 
     profile = Profile.objects.get(pk=pk)
     context= profile.context_id
-
     return render(request, 'profile_controls.html', {'subcategory_and_controls': subcategory_and_controls, 'profile': profile.pk, 'context': context})
 
 def profile_roadmap(request, pk):
@@ -996,7 +990,6 @@ def profile_roadmap(request, pk):
 
 def implemented_controls(request):
     implementedcontrols =request.session['implemented_list']
-
     profilepk = request.session.get('pk')
     implementation=request.session.get('implementation')
     subcategory_clear_list = []
@@ -1099,9 +1092,8 @@ def profile_missing(request,pk):
         profile=Profile.objects.get(pk=pk)
         context=profile.context_id
         missing_controls = request.session['missing_list']
-        print("profilemissing")
-        print(missing_controls)
-        if (str(profile.level) == "None"):
+
+        if (str(profile.level) == "None" or str(profile.level) == "avanzato"):
             missing_controls = []
         else:
             level=profile.level
@@ -1114,9 +1106,7 @@ def profile_missing(request,pk):
 
             nextprofile= Profile.objects.get(context_id=context, level=nextlevel)
             nextprofilelevel=(profile_maturity_control.objects.filter(profile_id=nextprofile.pk)).values()
-
             actualprofilelevel=(profile_maturity_control.objects.filter(profile_id=profile.pk)).values()
-
             dict_actual={}
             dict_target = {}
             controls_actual=createdict(actualprofilelevel,dict_actual)
@@ -1183,8 +1173,6 @@ def fusion_profile_perform(request):
             controls_ufficiale = createdict(profiloufficiale, dict_ufficiale)
             controls_target = createdict(profilotarget, dict_target)
 
-            missingcontrols = []
-            temp= []
             temp = profileupgrade(controls_attuale, controls_ufficiale)
             missingcontrols= profileupgrade(temp, controls_target)
             request.session['missing_list']=missingcontrols
@@ -1197,7 +1185,6 @@ def fusion_profile_perform(request):
     return render(request,'profile_management.html',{
         'fusionform':fusionform,'profiles':profile
     })
-
 
 def delete_context(request,pk):
     if request.method == 'POST':
@@ -1226,10 +1213,8 @@ def read_context_file(request):
         excel_file= request.FILES["excel_file"]
         wb=openpyxl.load_workbook(excel_file)
         worksheet=wb["Sheet1"]
-
         loadedcontext=Context(name="User Context")
         loadedcontext.save()
-
         last_context=(Context.objects.latest('id')).pk
 
         for i,row in enumerate(worksheet.iter_rows(),start=0):
@@ -1467,7 +1452,6 @@ def export_roadmap(request, pk):
 
         row_list = []
 
-        print(missingcontrols)
         for element in missingcontrols:
             subcategory = (Subcategory.objects.get(id=element['subcategory_id']))
             controlli=[]
@@ -1503,7 +1487,6 @@ def export_roadmap(request, pk):
                 cell.alignment = Alignment(wrapText=True)
                 value = cell.column_letter
                 worksheet.column_dimensions[value].width = 50
-
 
         workbook.save(response)
     return response
