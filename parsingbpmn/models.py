@@ -125,7 +125,7 @@ class Family(models.Model):
 class Control(models.Model):
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=500)
-    family= models.ForeignKey(Family, on_delete=models.CASCADE, default='1')
+    family= models.ForeignKey(Family, on_delete=models.CASCADE, default='1', null=True)
     maturity_level = models.CharField(max_length=100, default = "minimo")
 
     class Meta:

@@ -55,7 +55,7 @@
                         </form>
                         {% endif %}
                         {% if "target" in profile.name %}
-                            not evaluable
+                            N/A
                         {% endif %}
                     </td>
                     <td>
@@ -72,12 +72,12 @@
                         </form>
                         {% endif %}
                         {% if "target" in profile.name %}
-                            none
+                            N/A
                         {% endif %}
                     </td>
                     <td >
                         {% if "target" in profile.name %}
-                            none
+                            N/A
                         {% endif %}
                          {% if "target" not in profile.name %}
                         <form method="POST" action="{% url 'save_profile_controls' profile.pk %}">

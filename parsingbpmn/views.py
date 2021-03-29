@@ -10,7 +10,7 @@ from .forms import ProcessForm, SystemForm, ContextualizationForm, ProfileForm, 
 from .models import Process, Asset, System, Asset_has_attribute, Attribute, Asset_type, Attribute_value, \
     Threat_has_attribute, Threat_has_control, Context, Profile, Contextualization, profile_maturity_control, \
     Subcategory, Control, profile_has_subcategory, Subcategory_is_implemented_through_control, Category, \
-    contextualization_has_maturity_levels, Maturity_level, Fusioncontext_has_context, Family, control_framework, \
+    contextualization_has_maturity_levels, Maturity_level, Fusioncontext_has_context, Family, \
     Threat_has_family
 from .bpmn_python_master.bpmn_python import bpmn_diagram_rep as diagram
 from utils.fusion_functions import checkPriority, comparingmaturity, convertFromDatabase, convertToDatabase, createdict, profileupgrade,\
