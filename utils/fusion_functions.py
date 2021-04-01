@@ -81,7 +81,9 @@ def comparingmaturity(v1, v2, newelement):
 
     return newelement
 
-def createdict(dictionarylist,newdict):
+def createdict(dictionarylist):
+
+    newdict={}
 
     for subcategory in dictionarylist:
         if subcategory['subcategory_id'] not in newdict.keys():
@@ -106,9 +108,11 @@ def profileupgrade(list1,list2):
     j=0
     result = []
 
+    #[21, 22, 25, 27, 29, 30, 31, 32]
+    #[21, 27, 29, 22, 25, 26, 28, 30, 23, 24, 31, 32, 33]
+
     while(i< len(list1) and j< len(list2)):
         if list1[i]['subcategory_id'] == list2[j]['subcategory_id']:
-            newelement=[]
             newelement = list1[i]
             temp= []
             newelement['control_id']= comparingcontrols(list1[i]['control_id'], list2[j]['control_id'], temp)
@@ -140,8 +144,11 @@ def comparingcontrols(v1,v2,newelement):
     i = 0
     j = 0
 
-    #[21, 22, 26, 27, 28, 29, 30]
-    #[21,27,29]
+    # [21, 22, 25, 27, 29, 30, 31, 32]
+    # [21, 27, 29, 22, 25, 26, 28, 30, 23, 24, 31, 32, 33]
+
+    v1.sort()
+    v2.sort()
 
     while (i < len(v1) and j < len(v2)):
         if (v1[i] == v2[j]):
@@ -160,3 +167,53 @@ def comparingcontrols(v1,v2,newelement):
     return newelement
 
 
+def mergecontrols(list1,list2):
+    i =0
+    j=0
+    result = []
+
+
+
+    while(i< len(list1) and j< len(list2)):
+        if list1[i]['subcategory_id'] == list2[j]['subcategory_id']:
+            newelement = list1[i]
+            newelement['control_id']= list(list1[i]['control_id'] + list2[j]['control_id'])
+            result.append(newelement)
+            i=i+1
+            j=j+1
+        elif list1[i]['subcategory_id'] < list2[j]['subcategory_id']:
+            newelement = list1[i]
+            result.append(newelement)
+            i=i+1
+        else:
+            newelement = list2[j]
+            result.append(newelement)
+            j=j+1
+
+    while (i < len(list1)):
+        newelement = list1[i]
+        result.append(newelement)
+        i = i + 1
+
+    while (j < len(list2)):
+        newelement = list2[j]
+        result.append(newelement)
+        j = j + 1
+
+    return result
+
+def fusionprofileandupgrade(attuale, minimo, standard,avanzato, livellotarget):
+
+    result=[]
+
+    if(livellotarget == "standard"):
+        prova = mergecontrols(minimo,standard)
+        result=profileupgrade(attuale, prova)
+    elif(livellotarget=="avanzato"):
+        prova = mergecontrols(minimo, standard)
+        prova2=mergecontrols(prova,avanzato)
+        result=profileupgrade(attuale,prova2)
+    else:
+        result=profileupgrade(attuale,minimo)
+
+    return result

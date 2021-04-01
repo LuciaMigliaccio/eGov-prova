@@ -14,7 +14,7 @@ from .models import Process, Asset, System, Asset_has_attribute, Attribute, Asse
     Threat_has_family
 from .bpmn_python_master.bpmn_python import bpmn_diagram_rep as diagram
 from utils.fusion_functions import checkPriority, comparingmaturity, convertFromDatabase, convertToDatabase, createdict, profileupgrade,\
-    comparingcontrols
+    comparingcontrols, fusionprofileandupgrade
 
 # Create your views here.
 
@@ -978,7 +978,7 @@ def profile_roadmap(request, pk):
         profile = profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=pk))
         profilotarget = profile.values()
         dict_target = {}
-        controls_target = createdict(profilotarget, dict_target)
+        controls_target = createdict(profilotarget)
         implementedcontrols = controls_target
         implementation = "other"
         request.session['pk'] = pk
@@ -1026,25 +1026,25 @@ def profile_evaluation(request,pk):
         std_profile = []
         avz_profile = []
         missing_controls=[]
-        newdict={}
+
 
         for profile in profiles:
             if "target" in profile['name']:
                 if profile['framework_id'] == profile_framework:
                     if "minimo" in profile['name']:
-                        newmindict={}
-                        min_temp = (profile_maturity_control.objects.filter(profile_id=profile['id'])).values()
-                        min_profile = createdict(min_temp,newmindict)
-                    if "standard" in profile['name']:
-                        newstddict={}
-                        std_temp= (profile_maturity_control.objects.filter(profile_id=profile['id'])).values()
-                        std_profile=createdict(std_temp, newstddict)
-                    if "avanzato" in profile['name']:
-                        newavzdict={}
-                        avz_temp=(profile_maturity_control.objects.filter(profile_id=profile['id'])).values()
-                        avz_profile = createdict(avz_temp, newavzdict)
 
-        actual_profile = createdict(profile_controls, newdict)
+                        min_temp = (profile_maturity_control.objects.filter(profile_id=profile['id'])).values()
+                        min_profile = createdict(min_temp)
+                    if "standard" in profile['name']:
+
+                        std_temp= (profile_maturity_control.objects.filter(profile_id=profile['id'])).values()
+                        std_profile=createdict(std_temp)
+                    if "avanzato" in profile['name']:
+
+                        avz_temp=(profile_maturity_control.objects.filter(profile_id=profile['id'])).values()
+                        avz_profile = createdict(avz_temp)
+
+        actual_profile = createdict(profile_controls)
 
         for subcat in actual_profile:
             for subcategory in min_profile:
@@ -1107,10 +1107,9 @@ def profile_missing(request,pk):
             nextprofile= Profile.objects.get(context_id=context, level=nextlevel)
             nextprofilelevel=(profile_maturity_control.objects.filter(profile_id=nextprofile.pk)).values()
             actualprofilelevel=(profile_maturity_control.objects.filter(profile_id=profile.pk)).values()
-            dict_actual={}
-            dict_target = {}
-            controls_actual=createdict(actualprofilelevel,dict_actual)
-            controls_target = createdict(nextprofilelevel, dict_target)
+
+            controls_actual=createdict(actualprofilelevel)
+            controls_target = createdict(nextprofilelevel)
             missing_controls = profileupgrade(controls_actual, controls_target)
 
         request.session['missing_list'] = missing_controls
@@ -1155,28 +1154,27 @@ def fusion_profile_perform(request):
         fusionform = FusionForm(request.POST)
         if fusionform.is_valid():
             actualprofile = fusionform['actual_profile'].value()
-            officialprofile = fusionform['official_profile'].value()
-            targetprofile= fusionform['target_profile'].value()
+            targetprofile= Profile.objects.get(pk=fusionform['target_profile'].value())
+            profiles = Profile.objects.filter(context_id=targetprofile.context_id)
+            for profile in profiles:
+                if "minimo" in profile.name:
+                    profileminimo = (profile_maturity_control.objects.filter(profile=profile.pk)).values()
+                if "standard" in profile.name:
+                    profilestandard = (profile_maturity_control.objects.filter(profile=profile.pk)).values()
+                if "avanzato" in profile.name:
+                    profileavanzato = (profile_maturity_control.objects.filter(profile=profile.pk)).values()
 
-            profile1= profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=actualprofile))
-            profile2 = profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=officialprofile))
-            profile3 = profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=targetprofile))
-            profiloattuale=profile1.values()
-            profiloufficiale = profile2.values()
-            profilotarget = profile3.values()
+            profileattuale= (profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=actualprofile))).values()
+            targetlevel = targetprofile.level
+            controls_attuale = createdict(profileattuale)
+            controls_minimo=createdict(profileminimo)
+            controls_standard=createdict(profilestandard)
+            controls_avanzato=createdict(profileavanzato)
 
-            dict_attuale = {}
-            dict_ufficiale= {}
-            dict_target = {}
+            missingcontrols= fusionprofileandupgrade(controls_attuale, controls_minimo, controls_standard, controls_avanzato, targetlevel)
 
-            controls_attuale= createdict(profiloattuale, dict_attuale)
-            controls_ufficiale = createdict(profiloufficiale, dict_ufficiale)
-            controls_target = createdict(profilotarget, dict_target)
-
-            temp = profileupgrade(controls_attuale, controls_ufficiale)
-            missingcontrols= profileupgrade(temp, controls_target)
             request.session['missing_list']=missingcontrols
-            print(missingcontrols)
+
             request.session['implementation']="none"
             return redirect('controls_missing')
     else:

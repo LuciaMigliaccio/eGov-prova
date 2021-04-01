@@ -27,7 +27,6 @@ class ProfileForm(forms.ModelForm):
 
 class FusionForm(forms.Form):
     actual_profile = forms.ModelChoiceField(queryset=Profile.objects.all(), empty_label="Select actual profile")
-    official_profile = forms.ModelChoiceField(queryset=Profile.objects.all(), empty_label="Select official profile")
     target_profile= forms.ModelChoiceField(queryset=Profile.objects.all(), empty_label="Select target profile")
 
 class SelectContextForm(forms.Form):
