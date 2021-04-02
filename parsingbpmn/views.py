@@ -1032,15 +1032,12 @@ def profile_evaluation(request,pk):
             if "target" in profile['name']:
                 if profile['framework_id'] == profile_framework:
                     if "minimo" in profile['name']:
-
                         min_temp = (profile_maturity_control.objects.filter(profile_id=profile['id'])).values()
                         min_profile = createdict(min_temp)
                     if "standard" in profile['name']:
-
                         std_temp= (profile_maturity_control.objects.filter(profile_id=profile['id'])).values()
                         std_profile=createdict(std_temp)
                     if "avanzato" in profile['name']:
-
                         avz_temp=(profile_maturity_control.objects.filter(profile_id=profile['id'])).values()
                         avz_profile = createdict(avz_temp)
 
