@@ -1153,20 +1153,25 @@ def fusion_profile_perform(request):
             actualprofile = fusionform['actual_profile'].value()
             targetprofile= Profile.objects.get(pk=fusionform['target_profile'].value())
             profiles = Profile.objects.filter(context_id=targetprofile.context_id)
+            controls_minimo=[]
+            controls_standard=[]
+            controls_avanzato=[]
+
             for profile in profiles:
                 if "minimo" in profile.name:
                     profileminimo = (profile_maturity_control.objects.filter(profile=profile.pk)).values()
+                    controls_minimo = createdict(profileminimo)
                 if "standard" in profile.name:
                     profilestandard = (profile_maturity_control.objects.filter(profile=profile.pk)).values()
+                    controls_standard = createdict(profilestandard)
                 if "avanzato" in profile.name:
                     profileavanzato = (profile_maturity_control.objects.filter(profile=profile.pk)).values()
+                    controls_avanzato = createdict(profileavanzato)
+
 
             profileattuale= (profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=actualprofile))).values()
             targetlevel = targetprofile.level
             controls_attuale = createdict(profileattuale)
-            controls_minimo=createdict(profileminimo)
-            controls_standard=createdict(profilestandard)
-            controls_avanzato=createdict(profileavanzato)
 
             missingcontrols= fusionprofileandupgrade(controls_attuale, controls_minimo, controls_standard, controls_avanzato, targetlevel)
 
@@ -1418,7 +1423,7 @@ def export_profile(request, pk):
 
 
 def export_roadmap(request, pk):
-    missingcontrols = request.session['list']
+    missingcontrols = request.session['missing_list']
     if request.method == 'POST':
 
         response = HttpResponse(
@@ -1446,6 +1451,8 @@ def export_roadmap(request, pk):
                                  bottom=Side(border_style="thin", color='FF000000'), )
 
         row_list = []
+
+        print(missingcontrols)
 
         for element in missingcontrols:
             subcategory = (Subcategory.objects.get(id=element['subcategory_id']))

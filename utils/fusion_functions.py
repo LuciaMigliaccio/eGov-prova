@@ -120,8 +120,8 @@ def profileupgrade(list1,list2):
             i=i+1
             j=j+1
         elif list1[i]['subcategory_id'] < list2[j]['subcategory_id']:
-            newelement = list1[i]
-            result.append(newelement)
+            #newelement = list1[i]['subcategory_id']
+            #result.append(newelement)
             i=i+1
         else:
             newelement = list2[j]
@@ -129,8 +129,8 @@ def profileupgrade(list1,list2):
             j=j+1
 
     while (i < len(list1)):
-        newelement = list1[i]
-        result.append(newelement)
+        #newelement = list1[i]['subcategory_id']
+        #result.append(newelement)
         i = i + 1
 
     while (j < len(list2)):
@@ -171,8 +171,6 @@ def mergecontrols(list1,list2):
     i =0
     j=0
     result = []
-
-
 
     while(i< len(list1) and j< len(list2)):
         if list1[i]['subcategory_id'] == list2[j]['subcategory_id']:
