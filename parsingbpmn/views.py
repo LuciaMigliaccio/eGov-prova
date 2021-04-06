@@ -1429,14 +1429,14 @@ def export_roadmap(request, pk):
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
-        response['Content-Disposition'] = 'attachment; filename={date}-{name}-roadmap.xlsx'.format(
+        response['Content-Disposition'] = 'attachment; filename={date}-roadmap.xlsx'.format(
             date=datetime.now().strftime('%d-%m-%Y'),
-            name="roadmap_export"
+
         )
         workbook = Workbook()
 
         worksheet = workbook.active
-        worksheet.title = 'Profile'
+        worksheet.title = 'Roadmap'
         columns = ['Subcategory', 'Controls']
         row_num = 1
 
@@ -1451,8 +1451,6 @@ def export_roadmap(request, pk):
                                  bottom=Side(border_style="thin", color='FF000000'), )
 
         row_list = []
-
-        print(missingcontrols)
 
         for element in missingcontrols:
             subcategory = (Subcategory.objects.get(id=element['subcategory_id']))
