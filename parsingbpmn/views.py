@@ -1,6 +1,7 @@
 from datetime import datetime
 import re, openpyxl
 
+from django.forms import model_to_dict
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from openpyxl import Workbook
@@ -1123,6 +1124,8 @@ def controls_missing(request):
     subcategory_clear_list = []
     controls_clear_list= []
     framework_clear_list=[]
+    subcategory_actual_list = []
+    subcategory_available = []
 
     if implementation=="none":
         implementation_list = implementation
@@ -1141,9 +1144,19 @@ def controls_missing(request):
         controls_clear_list.append(control['control_id'])
         framework_clear_list.append(framework_list)
 
+    subcategory_actual = (profile_has_subcategory.objects.filter(profile_id=profilepk)).values()
+    for subcategory in subcategory_actual:
+        subcategory_actual_list.append(subcategory['subcategory_id'])
+
+    for element in missing_controls:
+        if element['subcategory_id'] in subcategory_actual_list:
+            subcategory_available.append("A")
+        else:
+            subcategory_available.append("N/A")
+
     if request.method=='POST':
         request.session['missing_list']= missing_controls
-    return render(request, 'controls_missing.html', {'profilepk': profilepk, 'implementation_list': implementation_list,'framework_clear_list': framework_clear_list, 'subcategory_clear_list': subcategory_clear_list, 'controls_clear_list': controls_clear_list})
+    return render(request, 'controls_missing.html', {'subcategory_available': subcategory_available ,'profilepk': profilepk, 'implementation_list': implementation_list,'framework_clear_list': framework_clear_list, 'subcategory_clear_list': subcategory_clear_list, 'controls_clear_list': controls_clear_list})
 
 
 def fusion_profile_perform(request):
@@ -1168,11 +1181,9 @@ def fusion_profile_perform(request):
                     profileavanzato = (profile_maturity_control.objects.filter(profile=profile.pk)).values()
                     controls_avanzato = createdict(profileavanzato)
 
-
             profileattuale= (profile_maturity_control.objects.filter(profile=Profile.objects.get(pk=actualprofile))).values()
             targetlevel = targetprofile.level
             controls_attuale = createdict(profileattuale)
-
             missingcontrols= fusionprofileandupgrade(controls_attuale, controls_minimo, controls_standard, controls_avanzato, targetlevel)
 
             request.session['missing_list']=missingcontrols
@@ -1424,6 +1435,21 @@ def export_profile(request, pk):
 
 def export_roadmap(request, pk):
     missingcontrols = request.session['missing_list']
+    profilepk = request.session.get('pk')
+    subcategory_actual_list=[]
+    subcategory_available=[]
+
+    subcategory_actual = (profile_has_subcategory.objects.filter(profile_id=profilepk)).values()
+    for subcategory in subcategory_actual:
+        subcategory_actual_list.append(subcategory['subcategory_id'])
+
+    for element in missingcontrols:
+        if element['subcategory_id'] in subcategory_actual_list:
+            subcategory_available.append("A")
+        else:
+            subcategory_available.append("N/A")
+
+
     if request.method == 'POST':
 
         response = HttpResponse(
@@ -1437,7 +1463,7 @@ def export_roadmap(request, pk):
 
         worksheet = workbook.active
         worksheet.title = 'Roadmap'
-        columns = ['Subcategory', 'Controls']
+        columns = ['Available','Subcategory', 'Controls']
         row_num = 1
 
         # Assign the titles for each cell of the header
@@ -1452,7 +1478,7 @@ def export_roadmap(request, pk):
 
         row_list = []
 
-        for element in missingcontrols:
+        for i,element in enumerate(missingcontrols,start=0):
             subcategory = (Subcategory.objects.get(id=element['subcategory_id']))
             controlli=[]
 
@@ -1461,13 +1487,14 @@ def export_roadmap(request, pk):
                 controlli.append(controllo.name + ": " + controllo.description)
             controlsjoined = ";".join(controlli)
 
-            row_list.append({'subcategory': subcategory, 'controls': controlsjoined})
+            row_list.append({'available': subcategory_available[i],'subcategory': subcategory, 'controls': controlsjoined})
 
         for row in row_list:
             row_num += 1
 
             # define data for each cell in the row
             row = [
+                row['available'],
                 row['subcategory'].name + ": " + row['subcategory'].description,
                 row['controls']
             ]

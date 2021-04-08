@@ -11,6 +11,7 @@
      <table class="table">
         <thead>
             <tr>
+                <th>Available</th>
                 <th>Subcategory </th>
                 <th>Controls</th>
             </tr>
@@ -20,6 +21,9 @@
                 <td>
                     {% for subcategory in subcategory_clear_list %}
                         <tr>
+                            <td>
+                                {{ subcategory_available|index:forloop.counter0 }}
+                            </td>
                             <td>{{ subcategory}}: {{ subcategory.description}} </td>
                             <td>
                             <ol>
