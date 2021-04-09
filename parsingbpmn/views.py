@@ -715,7 +715,7 @@ def save_contextualization(request):
                 newcontextualizationmaturity=contextualization_has_maturity_levels(maturity_level_id=item['id'], subcategory_contextualization_id=(Contextualization.objects.latest('id')).pk)
                 newcontextualizationmaturity.save()
 
-    fusionform=FusionForm(request.POST)
+    fusionform=ContextualizationForm(request.POST)
     context = Context.objects.all()
     return render(request, 'context_management.html', {'contexts': context, 'form': fusionform})
 
@@ -1028,7 +1028,6 @@ def profile_evaluation(request,pk):
         avz_profile = []
         missing_controls=[]
 
-
         for profile in profiles:
             if "target" in profile['name']:
                 if profile['framework_id'] == profile_framework:
@@ -1063,7 +1062,6 @@ def profile_evaluation(request,pk):
                             missing_controls.append({'subcategory_id': subcategory['subcategory_id'], 'control_id': newelement})
         else:
             current_profile.level="insufficiente"
-
 
         if not missing_controls:
             current_profile.level="standard"
